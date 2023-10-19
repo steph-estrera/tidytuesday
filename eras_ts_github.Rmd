@@ -1,0 +1,105 @@
+---
+title: 'Taylor Swift Songs: Energy and Valence'
+output:
+  html_document:
+    df_print: paged
+---
+```{r library}
+library(ggplot2)
+library(plotly)
+library(gapminder)
+library(dplyr)
+```
+
+```{r}
+## install.packages("tidytuesdayR")
+tuesdata <- tidytuesdayR::tt_load(2023, week = 42)
+taylor_album_songs <- tuesdata$taylor_album_songs
+```
+
+```{r}
+# Add a new column with color
+album_name = unique(taylor_album_songs$album_name)
+mycolors = c("#b9d2b5", # Taylor Swift
+             "#f4cb8d", # Fearless
+             "#d1b2d2", # Speak Now
+             "#823549", # Red
+             "#b5e9f6", # 1989
+             "#847e80", # reputation
+             "#f9b2d0", # Lover
+             "#cfcac6", # folklore
+             "#c8ae95", # evermore
+             "#434961"  # Midnights
+)
+
+color_data = data.frame (album_name, color = mycolors)
+
+taylor_album_songs = taylor_album_songs %>% left_join(color_data, by = "album_name")
+
+data = taylor_album_songs %>%
+  select(album_name, color, track_name, valence, energy)
+
+```
+
+```{r}
+custom_order = c("Taylor Swift", "Fearless (Taylor's Version)", "Speak Now", "Red (Taylor's Version)", "1989", "reputation", "Lover", "folklore", "evermore", "Midnights")
+data$album_name = factor(data$album_name, levels = custom_order)
+
+fig = plot_ly(data = data, x = ~energy, y = ~valence,
+               color =~album_name,
+               colors=mycolors,
+               marker = list(size = 10),
+               hovertemplate = ~paste("Track Name: ", track_name,
+                             "<br>Album: ", album_name,
+                             "<br>Energy: ", energy,
+                             "<br>Valence: ", valence,
+                             '<extra></extra>')
+)
+
+# Create text annotation
+text_annotation <- list(
+  x = 1.4,  # X-coordinate where you want to place the text
+  y = -.2, # Y-coordinate where you want to place the text (below the plot)
+  text = "<i><b>Valence</b> is musical positiveness conveyed by a track. <br>Tracks with high valence sound more positive (happy, cheerful).<br><b>Energy</b> represents represents a perceptual measure of intensity and activity.</i>",
+  showarrow = FALSE,
+  xref = "paper",  # x-coordinate reference is the entire plot area
+  yref = "paper",  # y-coordinate reference is the entire plot area
+  align = "right"
+)
+
+m <- list(
+  l = 50,
+  r = 50,
+  b = 150,
+  t = 50,
+  pad = 1
+)
+
+yaxis = list(
+  title = 'Spotify Valence Score (0.0 to 1.0)',
+  automargin = TRUE,
+  titlefont = list(size=16)
+)
+
+xaxis = list(
+  title = 'Spotify Energy Score (0.0 to 1.0)',
+  automargin = TRUE,
+  titlefont = list(size=16)
+)
+
+fig = fig %>% layout(title = 'Taylor Swift Songs: Energy and Valence', 
+                     plot_bgcolor = "#ffffff", 
+                     autosize = F,
+                     width = 800,
+                     height = 800,
+                     margin = m,
+                     xaxis = xaxis, 
+                     yaxis = yaxis, 
+                     legend = list(title=list(text='Album')),
+                     annotations = text_annotation,
+                     font = list(family = "Courier New",
+                                 size = 12))
+fig
+
+```
+
